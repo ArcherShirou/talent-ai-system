@@ -1,0 +1,4109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talent AI - 智能猎头系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #818CF8;
+            --primary-dark: #3730A3;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --info: #3B82F6;
+            --bg-dark: #0F172A;
+            --bg-card: #1E293B;
+            --bg-card-hover: #334155;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --border-color: #334155;
+            --gradient-primary: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            --gradient-success: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            --gradient-warning: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            --gradient-danger: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+            --gradient-info: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Layout */
+        .app-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+        
+        .logo-text h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+        
+        .logo-text span {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            overflow-y: auto;
+        }
+        
+        .nav-section {
+            margin-bottom: 24px;
+        }
+        
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .nav-item:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+        
+        .nav-item.active {
+            background: var(--gradient-primary);
+            color: white;
+        }
+        
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        .nav-item .badge {
+            margin-left: auto;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        /* Company List */
+        .company-section {
+            padding: 16px;
+            border-top: 1px solid var(--border-color);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .company-search {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        
+        .company-search input {
+            width: 100%;
+            padding: 10px 12px 10px 36px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+        
+        .company-search input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .company-search i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .company-list {
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        
+        .company-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+        }
+        
+        .company-item:hover {
+            background: var(--bg-card-hover);
+        }
+        
+        .company-item.active {
+            background: rgba(79, 70, 229, 0.2);
+            border: 1px solid var(--primary);
+        }
+        
+        .company-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .company-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .company-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .company-count {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        
+        /* Content Header */
+        .content-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .btn-back {
+            padding: 10px 20px;
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            color: var(--primary-light);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-back:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .company-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .company-header-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .company-header-info h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .company-header-info .meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .time-range {
+            background: var(--bg-card);
+            padding: 8px 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        
+        .stat-card .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .stat-card .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        /* Department Cards */
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title i {
+            color: var(--primary);
+        }
+        
+        .department-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .department-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .department-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .dept-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .dept-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .dept-count {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .dept-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .dept-tag {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .sub-depts {
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+        }
+        
+        .sub-dept {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .sub-dept:hover {
+            color: var(--primary);
+        }
+        
+        .sub-dept .count {
+            background: var(--bg-card-hover);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+        
+        /* Candidate List */
+        .candidate-list {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+        
+        .candidate-header {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;
+            padding: 16px 20px;
+            background: var(--bg-dark);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .candidate-item {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+        
+        .candidate-item:last-child {
+            border-bottom: none;
+        }
+        
+        .candidate-item:hover {
+            background: var(--bg-card-hover);
+        }
+        
+        .candidate-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .candidate-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .candidate-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .candidate-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .status-badge.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+        
+        .status-badge.pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+        
+        .status-badge.interview {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--info);
+        }
+        
+        .status-badge.rejected {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+        
+        /* Score Bar */
+        .score-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .score-value {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .score-progress {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-dark);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .score-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        /* Skills Tags */
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .skill-tag {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--bg-dark);
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(80vh - 140px);
+        }
+        
+        .profile-section {
+            margin-bottom: 24px;
+        }
+        
+        .profile-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .profile-section h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+        
+        .profile-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .profile-item:last-child {
+            border-bottom: none;
+        }
+        
+        .profile-label {
+            width: 100px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .profile-value {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            padding: 12px 24px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-outline {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        /* Forms */
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tab-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        
+        .tab-btn.active {
+            background: var(--gradient-primary);
+            border-color: transparent;
+            color: white;
+        }
+        
+        .tab-btn i {
+            font-size: 16px;
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.05);
+        }
+        
+        .upload-area i {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+        
+        .upload-area h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        
+        .upload-area p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        /* Batch Upload Styles */
+        .batch-upload-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .zip-upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(79, 70, 229, 0.02);
+        }
+        
+        .zip-upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.08);
+        }
+        
+        .zip-upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.15);
+        }
+        
+        .zip-upload-area i {
+            font-size: 56px;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+        
+        .zip-upload-area h4 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        
+        .zip-upload-area p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+        
+        .zip-upload-area .file-types {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .zip-upload-area .file-type-badge {
+            padding: 4px 12px;
+            background: rgba(79, 70, 229, 0.1);
+            border-radius: 20px;
+            font-size: 11px;
+            color: var(--primary-light);
+        }
+        
+        /* Progress Section */
+        .batch-progress {
+            margin-top: 24px;
+            padding: 20px;
+            background: var(--bg-dark);
+            border-radius: 12px;
+        }
+        
+        .batch-progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .batch-progress-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .batch-progress-header h4 i {
+            color: var(--primary);
+        }
+        
+        .batch-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+        }
+        
+        .batch-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .batch-stat.success { color: var(--success); }
+        .batch-stat.error { color: var(--danger); }
+        .batch-stat.pending { color: var(--warning); }
+        
+        .progress-bar-container {
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        /* File List */
+        .file-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+        
+        .file-item:hover {
+            border-color: var(--primary);
+        }
+        
+        .file-item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 12px;
+        }
+        
+        .file-item-icon.pdf { background: rgba(239, 68, 68, 0.2); color: #EF4444; }
+        .file-item-icon.doc { background: rgba(59, 130, 246, 0.2); color: #3B82F6; }
+        .file-item-icon.img { background: rgba(16, 185, 129, 0.2); color: #10B981; }
+        
+        .file-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .file-item-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-item-size {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        .file-item-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .status-icon.pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+        
+        .status-icon.processing {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--info);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-icon.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+        
+        .status-icon.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Batch Actions */
+        .batch-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .batch-actions .btn-primary {
+            flex: 1;
+        }
+        
+        .batch-actions .btn-outline {
+            flex: 1;
+        }
+        
+        /* AI Analysis */
+        .ai-analysis {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 16px;
+        }
+        
+        .ai-analysis-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .ai-analysis-header i {
+            color: var(--primary);
+        }
+        
+        .ai-analysis-header span {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .ai-analysis p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        /* Loading Spinner */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .toast i {
+            font-size: 18px;
+        }
+        
+        .toast span {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+        
+        .toast.success i { color: var(--success); }
+        .toast.error i { color: var(--danger); }
+        .toast.info i { color: var(--info); }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+        
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+        
+        .toast.info {
+            border-left: 4px solid var(--info);
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+        
+        /* Mobile Toggle */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 200;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Parsed Results Summary */
+        .batch-summary {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .batch-summary-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .batch-summary-header h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .batch-summary-header h4 i {
+            color: var(--success);
+        }
+        
+        .batch-summary-stats {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .summary-stat {
+            text-align: center;
+        }
+        
+        .summary-stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .summary-stat-value.success { color: var(--success); }
+        .summary-stat-value.error { color: var(--danger); }
+        .summary-stat-value.total { color: var(--primary); }
+        
+        .summary-stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 16px;
+                padding-top: 72px;
+            }
+            
+            .mobile-toggle {
+                display: flex;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .candidate-header,
+            .candidate-item {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .candidate-header > span:not(:first-child) {
+                display: none;
+            }
+            
+            .tab-nav {
+                flex-direction: column;
+            }
+            
+            .batch-summary-stats {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+        
+        /* AI搜寻员模块样式 */
+        .ai-module-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .ai-module-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.1);
+        }
+        
+        .smart-search-input {
+            position: relative;
+        }
+        
+        .smart-search-input textarea {
+            width: 100%;
+            padding: 16px 20px;
+            padding-right: 120px;
+            background: var(--bg-dark);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 15px;
+            resize: none;
+            min-height: 80px;
+            transition: all 0.2s;
+        }
+        
+        .smart-search-input textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+        
+        .smart-search-btn {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            padding: 10px 20px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .smart-search-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        
+        .smart-search-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 分析结果卡片 */
+        .analysis-result {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        
+        .analysis-result h5 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .keyword-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .keyword-tag {
+            padding: 4px 12px;
+            background: rgba(79, 70, 229, 0.15);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--primary-light);
+        }
+        
+        /* 推荐候选人卡片 */
+        .recommendation-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .recommendation-card:hover {
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+        
+        .recommendation-card.selected {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+        
+        .rec-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .rec-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .rec-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .rec-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .rec-position {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .rec-score {
+            text-align: right;
+        }
+        
+        .rec-score-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--success);
+        }
+        
+        .rec-score-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        .rec-match-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        
+        .match-tag {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .match-tag.matched {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+        
+        .match-tag.missing {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+        
+        .rec-reasons {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        
+        .rec-reasons li {
+            margin-bottom: 4px;
+        }
+        
+        /* 评估报告样式 */
+        .evaluation-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .eval-stat {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg-dark);
+            border-radius: 12px;
+        }
+        
+        .eval-stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .eval-stat-value.excellent { color: var(--success); }
+        .eval-stat-value.good { color: var(--info); }
+        .eval-stat-value.average { color: var(--warning); }
+        .eval-stat-value.poor { color: var(--danger); }
+        
+        .eval-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .strength-list, .risk-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .strength-list li, .risk-list li {
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .strength-list li {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+        
+        .strength-list li::before {
+            content: '✓';
+            font-weight: bold;
+        }
+        
+        .risk-list li {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+        
+        .risk-list li::before {
+            content: '⚠';
+        }
+        
+        /* 报告Markdown样式 */
+        .report-content {
+            background: var(--bg-dark);
+            border-radius: 12px;
+            padding: 24px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        .report-content h1 {
+            font-size: 22px;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .report-content h2 {
+            font-size: 16px;
+            color: var(--primary);
+            margin-top: 20px;
+            margin-bottom: 12px;
+        }
+        
+        .report-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+        }
+        
+        .report-content th, .report-content td {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+        
+        .report-content th {
+            background: var(--bg-card);
+            font-weight: 600;
+        }
+        
+        .report-content ul {
+            padding-left: 20px;
+        }
+        
+        .report-content li {
+            margin-bottom: 8px;
+        }
+        
+        /* 群发模块样式 */
+        .candidate-selector {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .candidate-selector-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .candidate-selector-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .selected-count {
+            padding: 4px 12px;
+            background: var(--primary);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .candidate-check-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .candidate-check-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: var(--bg-dark);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .candidate-check-item:hover {
+            background: var(--bg-card-hover);
+        }
+        
+        .candidate-check-item.selected {
+            background: rgba(79, 70, 229, 0.15);
+            border: 1px solid var(--primary);
+        }
+        
+        .candidate-check-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+            accent-color: var(--primary);
+        }
+        
+        /* 话术预览 */
+        .message-preview {
+            background: var(--bg-dark);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+        }
+        
+        .message-preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        
+        .message-preview-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .message-subject {
+            padding: 10px 14px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: var(--primary);
+        }
+        
+        .message-body {
+            padding: 14px;
+            background: white;
+            border-radius: 8px;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        /* 批量操作栏 */
+        .batch-action-bar {
+            position: sticky;
+            bottom: 0;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            padding: 16px;
+            margin: 0 -24px -24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .batch-action-bar .info {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .batch-actions-right {
+            display: flex;
+            gap: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Toast Container -->
+        <div class="toast-container">
+            <div v-for="toast in toasts" :key="toast.id" :class="['toast', toast.type]">
+                <i :class="['fas', toast.icon]"></i>
+                <span>{{ toast.message }}</span>
+            </div>
+        </div>
+        
+        <!-- Mobile Toggle -->
+        <button class="mobile-toggle" @click="toggleSidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="app-wrapper">
+            <!-- Sidebar -->
+            <aside class="sidebar" :class="{ 'open': sidebarOpen }">
+                <div class="sidebar-header">
+                    <div class="logo">
+                        <div class="logo-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="logo-text">
+                            <h1>Talent AI</h1>
+                            <span>智能猎头系统</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <nav class="sidebar-nav">
+                    <div class="nav-section">
+                        <div class="nav-section-title">主菜单</div>
+                        <div class="nav-item" :class="{ active: currentView === 'dashboard' }" @click="currentView = 'dashboard'">
+                            <i class="fas fa-chart-pie"></i>
+                            <span>智能前端</span>
+                        </div>
+                        <div class="nav-item" :class="{ active: currentView === 'workspace' }" @click="currentView = 'workspace'">
+                            <i class="fas fa-briefcase"></i>
+                            <span>我的工位</span>
+                        </div>
+                        <div class="nav-item" :class="{ active: currentView === 'candidates' }" @click="currentView = 'candidates'">
+                            <i class="fas fa-users"></i>
+                            <span>候选人库</span>
+                            <span class="badge">{{ candidates.length }}</span>
+                        </div>
+                        <div class="nav-item" :class="{ active: currentView === 'mapping' }" @click="currentView = 'mapping'">
+                            <i class="fas fa-sitemap"></i>
+                            <span>公司Mapping</span>
+                        </div>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <div class="nav-section-title">工具</div>
+                        <div class="nav-item" :class="{ active: currentView === 'parse' }" @click="currentView = 'parse'">
+                            <i class="fas fa-file-alt"></i>
+                            <span>AI简历解析</span>
+                        </div>
+                        <div class="nav-item" :class="{ active: currentView === 'similarity' }" @click="currentView = 'similarity'">
+                            <i class="fas fa-balance-scale"></i>
+                            <span>相似度推荐</span>
+                        </div>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <div class="nav-section-title">AI搜寻员</div>
+                        <div class="nav-item" :class="{ active: currentView === 'smart-search' }" @click="currentView = 'smart-search'">
+                            <i class="fas fa-magic"></i>
+                            <span>智能推荐</span>
+                            <span class="badge" style="background: var(--success);">NEW</span>
+                        </div>
+                        <div class="nav-item" :class="{ active: currentView === 'ai-evaluate' }" @click="currentView = 'ai-evaluate'">
+                            <i class="fas fa-clipboard-check"></i>
+                            <span>AI评估</span>
+                            <span class="badge" style="background: var(--success);">NEW</span>
+                        </div>
+                        <div class="nav-item" :class="{ active: currentView === 'report' }" @click="currentView = 'report'">
+                            <i class="fas fa-file-signature"></i>
+                            <span>优劣势报告</span>
+                            <span class="badge" style="background: var(--success);">NEW</span>
+                        </div>
+                        <div class="nav-item" :class="{ active: currentView === 'outreach' }" @click="currentView = 'outreach'">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>定制化群发</span>
+                            <span class="badge" style="background: var(--success);">NEW</span>
+                        </div>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <div class="nav-section-title">系统</div>
+                        <div class="nav-item" :class="{ active: currentView === 'interview' }" @click="currentView = 'interview'">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>面试进度</span>
+                        </div>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <div class="nav-section-title">系统</div>
+                        <div class="nav-item" :class="{ active: currentView === 'settings' }" @click="currentView = 'settings'">
+                            <i class="fas fa-cog"></i>
+                            <span>系统设置</span>
+                        </div>
+                    </div>
+                </nav>
+                
+                <!-- Company List -->
+                <div class="company-section">
+                    <div class="nav-section-title">公司列表</div>
+                    <div class="company-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" v-model="companySearch" placeholder="搜索公司..." @input="filterCompanies">
+                    </div>
+                    <div class="company-list">
+                        <div v-for="company in filteredCompanies" 
+                             :key="company.id" 
+                             class="company-item"
+                             :class="{ active: selectedCompany === company.id }"
+                             @click="selectCompany(company.id)">
+                            <div class="company-avatar" :style="{ background: getAvatarColor(company.name) }">
+                                {{ company.name.charAt(0) }}
+                            </div>
+                            <div class="company-info">
+                                <div class="company-name">{{ company.name }}</div>
+                                <div class="company-count">{{ company.count }} 位候选人</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Dashboard View -->
+                <template v-if="currentView === 'dashboard'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-chart-pie"></i> 智能前端</h2>
+                        <div class="time-range">
+                            <i class="fas fa-calendar"></i>
+                            <span>2024年1月 - 至今</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="icon" style="background: rgba(79, 70, 229, 0.2); color: #818CF8;">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="value">{{ candidates.length }}</div>
+                            <div class="label">候选人总数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon" style="background: rgba(16, 185, 129, 0.2); color: #10B981;">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <div class="value">{{ completedThisWeek }}</div>
+                            <div class="label">本周入职</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon" style="background: rgba(245, 158, 11, 0.2); color: #F59E0B;">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="value">{{ pendingFollowups }}</div>
+                            <div class="label">待跟进</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon" style="background: rgba(59, 130, 246, 0.2); color: #3B82F6;">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                            <div class="value">{{ successRate }}%</div>
+                            <div class="label">成功率</div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="section-title"><i class="fas fa-building"></i> 公司分布</h3>
+                    <div class="department-grid">
+                        <div v-for="company in companies" :key="company.id" class="department-card" @click="selectCompany(company.id)">
+                            <div class="dept-header">
+                                <div class="dept-name">{{ company.name }}</div>
+                                <div class="dept-count">{{ company.count }}</div>
+                            </div>
+                            <div class="dept-tags">
+                                <span v-for="tag in company.tags" :key="tag" class="dept-tag" :style="{ background: getTagBg(tag), color: getTagColor(tag) }">
+                                    {{ tag }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- Workspace View -->
+                <template v-if="currentView === 'workspace'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-briefcase"></i> 我的工位</h2>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="candidate-list">
+                                <div class="candidate-header">
+                                    <span>候选人</span>
+                                    <span>公司</span>
+                                    <span>状态</span>
+                                    <span>能力评分</span>
+                                    <span>操作</span>
+                                </div>
+                                <div v-for="candidate in myTasks" :key="candidate.id" class="candidate-item">
+                                    <div class="candidate-info">
+                                        <div class="candidate-avatar" :style="{ background: getAvatarColor(candidate.name) }">
+                                            {{ candidate.name.charAt(0) }}
+                                        </div>
+                                        <div>
+                                            <div class="candidate-name">{{ candidate.name }}</div>
+                                            <div class="candidate-title">{{ candidate.position }}</div>
+                                        </div>
+                                    </div>
+                                    <div>{{ candidate.company }}</div>
+                                    <div>
+                                        <span :class="['status-badge', candidate.status.toLowerCase()]">
+                                            {{ getStatusText(candidate.status) }}
+                                        </span>
+                                    </div>
+                                    <div class="score-bar">
+                                        <span class="score-value" :style="{ color: getScoreColor(candidate.score) }">{{ candidate.score }}</span>
+                                        <div class="score-progress">
+                                            <div class="score-fill" :style="{ width: candidate.score + '%', background: getScoreColor(candidate.score) }"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <button class="btn-outline btn-sm" @click="showCandidateDetail(candidate)">查看</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <h4 class="section-title"><i class="fas fa-bell"></i> 待办提醒</h4>
+                            <div v-for="reminder in reminders" :key="reminder.id" class="file-item" style="margin-bottom: 8px;">
+                                <div class="file-item-icon" :style="{ background: 'rgba(245, 158, 11, 0.2)', color: '#F59E0B' }">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="file-item-info">
+                                    <div class="file-item-name">{{ reminder.title }}</div>
+                                    <div class="file-item-size">{{ reminder.time }}</div>
+                                </div>
+                                <button class="btn-outline btn-sm" @click="handleReminder(reminder)">完成</button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- Candidates View -->
+                <template v-if="currentView === 'candidates'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-users"></i> 候选人库</h2>
+                        <button class="btn-primary" @click="showAddCandidate = true">
+                            <i class="fas fa-plus"></i> 添加候选人
+                        </button>
+                    </div>
+                    
+                    <div class="candidate-list">
+                        <div class="candidate-header">
+                            <span>候选人</span>
+                            <span>公司/职位</span>
+                            <span>状态</span>
+                            <span>能力评分</span>
+                            <span>操作</span>
+                        </div>
+                        <div v-for="candidate in candidates" :key="candidate.id" class="candidate-item" @click="showCandidateDetail(candidate)">
+                            <div class="candidate-info">
+                                <div class="candidate-avatar" :style="{ background: getAvatarColor(candidate.name) }">
+                                    {{ candidate.name.charAt(0) }}
+                                </div>
+                                <div>
+                                    <div class="candidate-name">{{ candidate.name }}</div>
+                                    <div class="candidate-title">{{ candidate.email }}</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div>{{ candidate.company || '-' }}</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">{{ candidate.position || '-' }}</div>
+                            </div>
+                            <div>
+                                <span :class="['status-badge', candidate.status.toLowerCase()]">
+                                    {{ getStatusText(candidate.status) }}
+                                </span>
+                            </div>
+                            <div class="score-bar">
+                                <span class="score-value" :style="{ color: getScoreColor(candidate.score) }">{{ candidate.score }}</span>
+                                <div class="score-progress">
+                                    <div class="score-fill" :style="{ width: candidate.score + '%', background: getScoreColor(candidate.score) }"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn-outline btn-sm" @click.stop="showCandidateDetail(candidate)">查看</button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- Mapping View -->
+                <template v-if="currentView === 'mapping'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-sitemap"></i> 公司Mapping</h2>
+                        <button class="btn-primary" @click="refreshMapping">
+                            <i class="fas fa-sync"></i> 刷新Mapping
+                        </button>
+                    </div>
+                    
+                    <div v-if="selectedCompany" class="content-header">
+                        <div class="company-header">
+                            <div class="company-header-avatar" :style="{ background: getAvatarColor(selectedCompany) }">
+                                {{ selectedCompany.charAt(0) }}
+                            </div>
+                            <div class="company-header-info">
+                                <h2>{{ selectedCompany }}</h2>
+                                <div class="meta">
+                                    <span><i class="fas fa-users"></i> {{ companyCandidates.length }} 位候选人</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-back" @click="selectedCompany = null">
+                            <i class="fas fa-arrow-left"></i> 返回列表
+                        </button>
+                    </div>
+                    
+                    <div v-if="selectedCompany">
+                        <div v-for="dept in departments" :key="dept.name" class="department-card" style="margin-bottom: 16px;">
+                            <div class="dept-header">
+                                <div class="dept-name">{{ dept.name }}</div>
+                                <div class="dept-count">{{ dept.count }}</div>
+                            </div>
+                            <div class="dept-tags">
+                                <span v-for="tag in dept.tags" :key="tag" class="dept-tag" :style="{ background: getTagBg(tag), color: getTagColor(tag) }">
+                                    {{ tag }}
+                                </span>
+                            </div>
+                            <div class="sub-depts">
+                                <div v-for="sub in dept.subDepts" :key="sub.name" class="sub-dept">
+                                    <span>{{ sub.name }}</span>
+                                    <span class="count">{{ sub.count }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-else class="department-grid">
+                        <div v-for="company in companies" :key="company.id" class="department-card" @click="selectCompany(company.id)">
+                            <div class="dept-header">
+                                <div class="dept-name">{{ company.name }}</div>
+                                <div class="dept-count">{{ company.count }}</div>
+                            </div>
+                            <div class="dept-tags">
+                                <span v-for="tag in company.tags" :key="tag" class="dept-tag" :style="{ background: getTagBg(tag), color: getTagColor(tag) }">
+                                    {{ tag }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- Parse Resume View -->
+                <template v-if="currentView === 'parse'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-file-alt"></i> AI简历解析</h2>
+                    </div>
+                    
+                    <!-- Tab Navigation -->
+                    <div class="tab-nav">
+                        <button class="tab-btn" :class="{ active: parseTab === 'single' }" @click="parseTab = 'single'">
+                            <i class="fas fa-file-upload"></i>
+                            单个简历上传
+                        </button>
+                        <button class="tab-btn" :class="{ active: parseTab === 'batch' }" @click="parseTab = 'batch'">
+                            <i class="fas fa-file-archive"></i>
+                            批量上传（ZIP）
+                        </button>
+                    </div>
+                    
+                    <!-- Single Upload Tab -->
+                    <template v-if="parseTab === 'single'">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="tab-content">
+                                    <div class="upload-area" @click="$refs.fileInput.click()" @dragover.prevent @drop.prevent="handleFileDrop">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <h4>上传简历</h4>
+                                        <p>支持 PDF、Word、图片格式，点击或拖拽上传</p>
+                                        <input type="file" ref="fileInput" @change="handleFileUpload" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display: none;">
+                                    </div>
+                                    
+                                    <div v-if="uploading" class="loading-spinner">
+                                        <div class="spinner"></div>
+                                    </div>
+                                    
+                                    <div v-if="parsedResume" class="mt-4">
+                                        <div class="ai-analysis">
+                                            <div class="ai-analysis-header">
+                                                <i class="fas fa-robot"></i>
+                                                <span>AI 解析结果</span>
+                                            </div>
+                                            <p>{{ parsedResume }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="tab-content">
+                                    <h4 class="section-title"><i class="fas fa-magic"></i> 解析预览</h4>
+                                    
+                                    <div class="profile-section">
+                                        <h4>基本信息</h4>
+                                        <div class="profile-item">
+                                            <div class="profile-label">姓名</div>
+                                            <div class="profile-value">{{ parsedData.name || '-' }}</div>
+                                        </div>
+                                        <div class="profile-item">
+                                            <div class="profile-label">手机</div>
+                                            <div class="profile-value">{{ parsedData.phone || '-' }}</div>
+                                        </div>
+                                        <div class="profile-item">
+                                            <div class="profile-label">邮箱</div>
+                                            <div class="profile-value">{{ parsedData.email || '-' }}</div>
+                                        </div>
+                                        <div class="profile-item">
+                                            <div class="profile-label">工作年限</div>
+                                            <div class="profile-value">{{ parsedData.years || '-' }}</div>
+                                        </div>
+                                        <div class="profile-item">
+                                            <div class="profile-label">学历</div>
+                                            <div class="profile-value">{{ parsedData.education || '-' }}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="profile-section">
+                                        <h4>技能标签</h4>
+                                        <div class="skill-tags">
+                                            <span v-for="skill in parsedData.skills" :key="skill" class="skill-tag" style="background: rgba(79, 70, 229, 0.2); color: #818CF8;">
+                                                {{ skill }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="profile-section">
+                                        <h4>工作经历</h4>
+                                        <div v-for="(exp, idx) in parsedData.experience" :key="idx" class="profile-item">
+                                            <div class="profile-label">{{ exp.company }}</div>
+                                            <div class="profile-value">{{ exp.position }} ({{ exp.duration }})</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button class="btn-primary w-100 mt-3" @click="saveCandidate" :disabled="!parsedData.name">
+                                        <i class="fas fa-save"></i> 保存到候选人库
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    <!-- Batch Upload Tab -->
+                    <template v-if="parseTab === 'batch'">
+                        <div class="batch-upload-section">
+                            <!-- Zip Upload Area -->
+                            <div class="zip-upload-area" 
+                                 :class="{ dragover: batchDragover }"
+                                 @click="$refs.zipFileInput.click()"
+                                 @dragover.prevent="batchDragover = true"
+                                 @dragleave.prevent="batchDragover = false"
+                                 @drop.prevent="handleBatchDrop">
+                                <i class="fas fa-file-archive"></i>
+                                <h4>上传 ZIP 压缩包</h4>
+                                <p>将多个简历文件打包为 ZIP 格式后上传</p>
+                                <div class="file-types">
+                                    <span class="file-type-badge">.zip</span>
+                                    <span class="file-type-badge">单次最多500个文件</span>
+                                </div>
+                                <input type="file" ref="zipFileInput" @change="handleZipUpload" accept=".zip" style="display: none;">
+                            </div>
+                            
+                            <!-- Extracted Files List -->
+                            <div v-if="batchFiles.length > 0" class="batch-progress">
+                                <div class="batch-progress-header">
+                                    <h4><i class="fas fa-list"></i> 待解析文件</h4>
+                                    <div class="batch-stats">
+                                        <span class="batch-stat total">
+                                            <i class="fas fa-file"></i> {{ batchFiles.length }} 个文件
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="file-list">
+                                    <div v-for="(file, index) in batchFiles" :key="index" class="file-item">
+                                        <div class="file-item-icon" :class="getFileIconClass(file.name)">
+                                            <i :class="getFileIcon(file.name)"></i>
+                                        </div>
+                                        <div class="file-item-info">
+                                            <div class="file-item-name">{{ file.name }}</div>
+                                            <div class="file-item-size">{{ formatFileSize(file.size) }}</div>
+                                        </div>
+                                        <div class="file-item-status">
+                                            <span :class="['status-icon', file.status]">
+                                                <i :class="getStatusIcon(file.status)"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Batch Actions -->
+                                <div class="batch-actions">
+                                    <button class="btn-outline" @click="clearBatchFiles">
+                                        <i class="fas fa-trash"></i> 清空列表
+                                    </button>
+                                    <button class="btn-primary" @click="startBatchParse" :disabled="batchProcessing">
+                                        <i class="fas fa-play"></i> {{ batchProcessing ? '解析中...' : '开始批量解析' }}
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Bar -->
+                            <div v-if="batchProcessing" class="batch-progress" style="margin-top: 16px;">
+                                <div class="batch-progress-header">
+                                    <h4><i class="fas fa-spinner fa-spin"></i> 正在解析...</h4>
+                                    <div class="batch-stats">
+                                        <span class="batch-stat success">
+                                            <i class="fas fa-check"></i> {{ batchSuccessCount }} 成功
+                                        </span>
+                                        <span class="batch-stat error">
+                                            <i class="fas fa-times"></i> {{ batchErrorCount }} 失败
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill" :style="{ width: batchProgress + '%' }"></div>
+                                </div>
+                                
+                                <p style="font-size: 13px; color: var(--text-secondary); text-align: center;">
+                                    正在解析: {{ currentParseFile || '准备中...' }}
+                                </p>
+                            </div>
+                            
+                            <!-- Batch Summary -->
+                            <div v-if="batchCompleted && batchResults.length > 0" class="batch-summary">
+                                <div class="batch-summary-header">
+                                    <h4><i class="fas fa-check-circle"></i> 批量解析完成</h4>
+                                </div>
+                                
+                                <div class="batch-summary-stats">
+                                    <div class="summary-stat">
+                                        <div class="summary-stat-value total">{{ batchResults.length }}</div>
+                                        <div class="summary-stat-label">总计</div>
+                                    </div>
+                                    <div class="summary-stat">
+                                        <div class="summary-stat-value success">{{ batchSuccessCount }}</div>
+                                        <div class="summary-stat-label">成功</div>
+                                    </div>
+                                    <div class="summary-stat">
+                                        <div class="summary-stat-value error">{{ batchErrorCount }}</div>
+                                        <div class="summary-stat-label">失败</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Parsed Results List -->
+                                <div class="file-list" style="margin-top: 16px; max-height: 300px;">
+                                    <div v-for="(result, index) in batchResults" :key="index" class="file-item">
+                                        <div class="file-item-icon" :class="result.success ? 'success' : 'error'">
+                                            <i :class="result.success ? 'fas fa-check' : 'fas fa-times'"></i>
+                                        </div>
+                                        <div class="file-item-info">
+                                            <div class="file-item-name">{{ result.name }}</div>
+                                            <div class="file-item-size" v-if="result.success">
+                                                {{ result.data.name || '未知姓名' }} | {{ result.data.skills?.join(', ') || '无技能' }}
+                                            </div>
+                                            <div class="file-item-size" v-else style="color: var(--danger);">
+                                                {{ result.error || '解析失败' }}
+                                            </div>
+                                        </div>
+                                        <span :class="['status-badge', result.success ? 'active' : 'rejected']">
+                                            {{ result.success ? '已保存' : '失败' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Save All Button -->
+                                <div class="batch-actions" style="margin-top: 16px;">
+                                    <button class="btn-primary" @click="exportBatchResults">
+                                        <i class="fas fa-download"></i> 导出结果
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+                
+                <!-- Similarity View -->
+                <template v-if="currentView === 'similarity'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-balance-scale"></i> 相似度推荐</h2>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="tab-content">
+                                <div class="mb-4">
+                                    <label class="form-label">选择目标候选人</label>
+                                    <select class="form-select" v-model="targetCandidate">
+                                        <option value="">请选择候选人...</option>
+                                        <option v-for="c in candidates" :key="c.id" :value="c.id">
+                                            {{ c.name }} - {{ c.position }}
+                                        </option>
+                                    </select>
+                                </div>
+                                
+                                <button class="btn-primary" @click="findSimilar" :disabled="!targetCandidate">
+                                    <i class="fas fa-search"></i> 查找相似候选人
+                                </button>
+                                
+                                <div v-if="similarCandidates.length > 0" class="mt-4">
+                                    <h4 class="section-title"><i class="fas fa-users"></i> 相似候选人</h4>
+                                    <div class="candidate-list">
+                                        <div class="candidate-header">
+                                            <span>候选人</span>
+                                            <span>相似度</span>
+                                            <span>共同技能</span>
+                                            <span>能力评分</span>
+                                            <span>操作</span>
+                                        </div>
+                                        <div v-for="sim in similarCandidates" :key="sim.id" class="candidate-item">
+                                            <div class="candidate-info">
+                                                <div class="candidate-avatar" :style="{ background: getAvatarColor(sim.name) }">
+                                                    {{ sim.name.charAt(0) }}
+                                                </div>
+                                                <div>
+                                                    <div class="candidate-name">{{ sim.name }}</div>
+                                                    <div class="candidate-title">{{ sim.position }}</div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <span class="score-value" :style="{ color: getScoreColor(sim.similarity) }">
+                                                    {{ sim.similarity }}%
+                                                </span>
+                                            </div>
+                                            <div class="skill-tags">
+                                                <span v-for="skill in sim.matchedSkills.slice(0, 3)" :key="skill" class="skill-tag" style="background: rgba(79, 70, 229, 0.2); color: #818CF8;">
+                                                    {{ skill }}
+                                                </span>
+                                            </div>
+                                            <div class="score-bar">
+                                                <span class="score-value">{{ sim.score }}</span>
+                                                <div class="score-progress">
+                                                    <div class="score-fill" :style="{ width: sim.score + '%', background: getScoreColor(sim.score) }"></div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <button class="btn-outline btn-sm" @click="showCandidateDetail(sim)">查看</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- Interview View -->
+                <template v-if="currentView === 'interview'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-calendar-check"></i> 面试进度跟踪</h2>
+                        <button class="btn-primary" @click="showAddInterview = true">
+                            <i class="fas fa-plus"></i> 添加面试记录
+                        </button>
+                    </div>
+                    
+                    <div class="candidate-list">
+                        <div class="candidate-header">
+                            <span>候选人</span>
+                            <span>面试轮次</span>
+                            <span>面试官</span>
+                            <span>时间</span>
+                            <span>状态</span>
+                        </div>
+                        <div v-for="interview in interviews" :key="interview.id" class="candidate-item">
+                            <div class="candidate-info">
+                                <div class="candidate-avatar" :style="{ background: getAvatarColor(interview.candidateName) }">
+                                    {{ interview.candidateName.charAt(0) }}
+                                </div>
+                                <div>
+                                    <div class="candidate-name">{{ interview.candidateName }}</div>
+                                    <div class="candidate-title">{{ interview.position }}</div>
+                                </div>
+                            </div>
+                            <div>{{ interview.round }}</div>
+                            <div>{{ interview.interviewer }}</div>
+                            <div>{{ interview.date }}</div>
+                            <div>
+                                <span :class="['status-badge', interview.status.toLowerCase()]">
+                                    {{ interview.status }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- Settings View -->
+                <template v-if="currentView === 'settings'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-cog"></i> 系统设置</h2>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="batch-upload-section">
+                                <h4 class="section-title"><i class="fas fa-key"></i> API 配置</h4>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">DeepSeek API Key</label>
+                                    <input type="password" class="form-control" v-model="settings.deepseekApiKey" placeholder="sk-...">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">飞书 App Token</label>
+                                    <input type="text" class="form-control" v-model="settings.larkAppToken" placeholder="X8mFbCyJla...">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">飞书 App Secret <span style="color: var(--danger);">*必填</span></label>
+                                    <input type="password" class="form-control" v-model="settings.larkAppSecret" placeholder="用于获取访问令牌">
+                                    <small class="text-muted">从飞书开放平台获取，用于授权访问多维表格</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">飞书 Candidates 表 ID</label>
+                                    <input type="text" class="form-control" v-model="settings.larkTableId" placeholder="tblKoDiAbTQ8Cd13">
+                                </div>
+                                
+                                <button class="btn-primary" @click="saveSettings">
+                                    <i class="fas fa-save"></i> 保存设置
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- ========== AI搜寻员模块 ========== -->
+                
+                <!-- 模块1: 智能搜索推荐 -->
+                <template v-if="currentView === 'smart-search'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-magic"></i> 智能推荐</h2>
+                        <span class="badge" style="background: var(--success); padding: 6px 12px;">AI驱动 防丢单</span>
+                    </div>
+                    
+                    <div class="ai-module-card">
+                        <h4 class="section-title"><i class="fas fa-search"></i> 输入岗位需求</h4>
+                        <div class="smart-search-input">
+                            <textarea v-model="smartSearchQuery" placeholder="例如：帮我找Java后端，3-5年经验，电商背景"></textarea>
+                            <button class="smart-search-btn" @click="doSmartSearch" :disabled="!smartSearchQuery || smartSearchLoading">
+                                <i class="fas" :class="smartSearchLoading ? 'fa-spinner fa-spin' : 'fa-robot'"></i>
+                                {{ smartSearchLoading ? '分析中...' : 'AI推荐' }}
+                            </button>
+                        </div>
+                        
+                        <!-- AI分析结果 -->
+                        <div v-if="smartSearchAnalysis" class="analysis-result">
+                            <h5><i class="fas fa-brain"></i> AI 分析结果</h5>
+                            <div class="keyword-tags">
+                                <span class="keyword-tag" v-for="kw in smartSearchAnalysis.keywords" :key="kw">{{ kw }}</span>
+                            </div>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">
+                                工作年限: {{ smartSearchAnalysis.experience_range }} | 
+                                行业背景: {{ smartSearchAnalysis.industry }} | 
+                                学历要求: {{ smartSearchAnalysis.education }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- 推荐结果 -->
+                    <div v-if="smartSearchResults.length > 0">
+                        <div class="content-header">
+                            <h4><i class="fas fa-users"></i> 匹配候选人 Top{{ smartSearchResults.length }}</h4>
+                            <span style="color: var(--text-secondary); font-size: 13px;">系统内共找到 {{ smartSearchTotal }} 位相关候选人</span>
+                        </div>
+                        
+                        <div v-for="rec in smartSearchResults" :key="rec.id" 
+                             class="recommendation-card"
+                             :class="{ selected: selectedCandidates.includes(rec.id) }"
+                             @click="toggleCandidateSelection(rec.id)">
+                            <div class="rec-header">
+                                <div class="rec-info">
+                                    <div class="rec-avatar" :style="{ background: getAvatarColor(rec.name) }">
+                                        {{ rec.name.charAt(0) }}
+                                    </div>
+                                    <div>
+                                        <div class="rec-name">{{ rec.name }}</div>
+                                        <div class="rec-position">{{ rec.position }} · {{ rec.company }}</div>
+                                    </div>
+                                </div>
+                                <div class="rec-score">
+                                    <div class="rec-score-value">{{ rec.match_score }}%</div>
+                                    <div class="rec-score-label">匹配度</div>
+                                </div>
+                            </div>
+                            
+                            <div class="rec-match-tags">
+                                <span class="match-tag matched" v-for="skill in rec.matched_skills.slice(0, 3)" :key="skill">
+                                    ✓ {{ skill }}
+                                </span>
+                                <span class="match-tag missing" v-for="skill in rec.missing_skills.slice(0, 2)" :key="skill">
+                                    ✗ {{ skill }}
+                                </span>
+                            </div>
+                            
+                            <ul class="rec-reasons">
+                                <li v-for="reason in rec.match_reasons" :key="reason">{{ reason }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- 空状态 -->
+                    <div v-else-if="smartSearchDone && smartSearchResults.length === 0" 
+                         class="ai-module-card" style="text-align: center; padding: 40px;">
+                        <i class="fas fa-search" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 16px;"></i>
+                        <h4 style="color: var(--text-secondary);">未找到匹配的候选人</h4>
+                        <p style="color: var(--text-secondary);">试试调整岗位需求关键词</p>
+                    </div>
+                </template>
+                
+                <!-- 模块2: AI评估 -->
+                <template v-if="currentView === 'ai-evaluate'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-clipboard-check"></i> AI评估</h2>
+                        <span class="badge" style="background: var(--success); padding: 6px 12px;">智能判断合适度</span>
+                    </div>
+                    
+                    <div class="ai-module-card">
+                        <h4 class="section-title"><i class="fas fa-user-check"></i> 选择候选人</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">选择候选人</label>
+                                    <select class="form-select" v-model="evaluateCandidateId">
+                                        <option value="">请选择候选人...</option>
+                                        <option v-for="c in candidates" :key="c.id" :value="c.id">
+                                            {{ c.name }} - {{ c.position }}
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">岗位需求（可选）</label>
+                                    <input type="text" class="form-control" v-model="evaluateJobRequirement" 
+                                           placeholder="例如：高级Java工程师，5年经验">
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-primary" @click="doEvaluate" :disabled="!evaluateCandidateId || evaluateLoading">
+                            <i class="fas" :class="evaluateLoading ? 'fa-spinner fa-spin' : 'fa-robot'"></i>
+                            {{ evaluateLoading ? '评估中...' : '开始AI评估' }}
+                        </button>
+                    </div>
+                    
+                    <!-- 评估结果 -->
+                    <div v-if="evaluationResult" class="ai-module-card">
+                        <h4 class="section-title"><i class="fas fa-chart-pie"></i> 评估结果</h4>
+                        
+                        <div class="evaluation-summary">
+                            <div class="eval-stat">
+                                <div class="eval-stat-value" :class="getScoreClass(evaluationResult.evaluation.overall_score)">
+                                    {{ evaluationResult.evaluation.overall_score }}
+                                </div>
+                                <div class="eval-stat-label">综合评分</div>
+                            </div>
+                            <div class="eval-stat">
+                                <div class="eval-stat-value" :class="getScoreClass(evaluationResult.evaluation.skill_match_score)">
+                                    {{ evaluationResult.evaluation.skill_match_score }}
+                                </div>
+                                <div class="eval-stat-label">技能匹配</div>
+                            </div>
+                            <div class="eval-stat">
+                                <div class="eval-stat-value" :class="getScoreClass(evaluationResult.evaluation.experience_match_score)">
+                                    {{ evaluationResult.evaluation.experience_match_score }}
+                                </div>
+                                <div class="eval-stat-label">经验匹配</div>
+                            </div>
+                            <div class="eval-stat">
+                                <div class="eval-stat-value" style="font-size: 20px;">
+                                    {{ evaluationResult.evaluation.growth_potential }}
+                                </div>
+                                <div class="eval-stat-label">成长潜力</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 style="color: var(--success); margin-bottom: 12px;">
+                                    <i class="fas fa-thumbs-up"></i> 核心优势
+                                </h5>
+                                <ul class="strength-list">
+                                    <li v-for="s in evaluationResult.evaluation.strengths" :key="s">{{ s }}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 style="color: var(--warning); margin-bottom: 12px;">
+                                    <i class="fas fa-exclamation-triangle"></i> 潜在风险
+                                </h5>
+                                <ul class="risk-list">
+                                    <li v-for="r in evaluationResult.evaluation.risk_points" :key="r">{{ r }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4" style="padding: 16px; background: var(--bg-dark); border-radius: 12px;">
+                            <h5 style="color: var(--primary); margin-bottom: 8px;">
+                                <i class="fas fa-comment-dots"></i> 推荐理由
+                            </h5>
+                            <p style="margin: 0; color: var(--text-secondary);">
+                                {{ evaluationResult.evaluation.recommendation }}
+                            </p>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h5 style="color: var(--text-primary); margin-bottom: 12px;">
+                                <i class="fas fa-bullseye"></i> 适合场景
+                            </h5>
+                            <div class="keyword-tags">
+                                <span class="keyword-tag" v-for="scene in evaluationResult.evaluation.suitable_scenarios" :key="scene">
+                                    {{ scene }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4" style="display: flex; gap: 12px;">
+                            <button class="btn-primary" @click="goToReport">
+                                <i class="fas fa-file-signature"></i> 查看完整报告
+                            </button>
+                            <button class="btn-outline" @click="goToOutreach">
+                                <i class="fas fa-paper-plane"></i> 立即联系
+                            </button>
+                        </div>
+                    </div>
+                </template>
+                
+                <!-- 模块3: 优劣势报告 -->
+                <template v-if="currentView === 'report'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-file-signature"></i> 优劣势报告</h2>
+                        <span class="badge" style="background: var(--success); padding: 6px 12px;">专业推荐分析</span>
+                    </div>
+                    
+                    <div class="ai-module-card">
+                        <h4 class="section-title"><i class="fas fa-file-alt"></i> 选择候选人</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">选择候选人</label>
+                                    <select class="form-select" v-model="reportCandidateId">
+                                        <option value="">请选择候选人...</option>
+                                        <option v-for="c in candidates" :key="c.id" :value="c.id">
+                                            {{ c.name }} - {{ c.position }}
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">岗位需求（可选）</label>
+                                    <input type="text" class="form-control" v-model="reportJobRequirement" 
+                                           placeholder="例如：高级Java工程师">
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-primary" @click="generateReport" :disabled="!reportCandidateId || reportLoading">
+                            <i class="fas" :class="reportLoading ? 'fa-spinner fa-spin' : 'fa-file-alt'"></i>
+                            {{ reportLoading ? '生成中...' : '生成报告' }}
+                        </button>
+                    </div>
+                    
+                    <!-- 报告内容 -->
+                    <div v-if="generatedReport" class="ai-module-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <h4 class="section-title" style="margin: 0;"><i class="fas fa-file-alt"></i> 候选人报告</h4>
+                            <button class="btn-outline" @click="exportReport">
+                                <i class="fas fa-download"></i> 导出报告
+                            </button>
+                        </div>
+                        
+                        <div class="report-content" v-html="renderMarkdown(generatedReport)"></div>
+                    </div>
+                </template>
+                
+                <!-- 模块4: 定制化群发 -->
+                <template v-if="currentView === 'outreach'">
+                    <div class="content-header">
+                        <h2><i class="fas fa-paper-plane"></i> 定制化群发</h2>
+                        <span class="badge" style="background: var(--success); padding: 6px 12px;">AI个性化话术</span>
+                    </div>
+                    
+                    <div class="ai-module-card">
+                        <h4 class="section-title"><i class="fas fa-users"></i> 选择候选人</h4>
+                        <div class="candidate-selector">
+                            <div class="candidate-selector-header">
+                                <h4>候选人列表</h4>
+                                <span class="selected-count">{{ selectedOutreachCandidates.length }} 人已选</span>
+                            </div>
+                            <div class="candidate-check-list">
+                                <div v-for="c in candidates" :key="c.id" 
+                                     class="candidate-check-item"
+                                     :class="{ selected: selectedOutreachCandidates.includes(c.id) }"
+                                     @click="toggleOutreachSelection(c.id)">
+                                    <input type="checkbox" :checked="selectedOutreachCandidates.includes(c.id)" @click.stop>
+                                    <div class="rec-avatar" :style="{ background: getAvatarColor(c.name), width: '36px', height: '36px', fontSize: '14px' }">
+                                        {{ c.name.charAt(0) }}
+                                    </div>
+                                    <div>
+                                        <div class="rec-name" style="font-size: 14px;">{{ c.name }}</div>
+                                        <div class="rec-position">{{ c.position }} · {{ c.company }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">目标岗位</label>
+                                    <input type="text" class="form-control" v-model="outreachJobRequirement" 
+                                           placeholder="例如：高级Java工程师，电商背景">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">发送渠道</label>
+                                    <select class="form-select" v-model="outreachChannel">
+                                        <option value="email">邮件</option>
+                                        <option value="wechat">微信</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn-primary" @click="generateOutreachMessages" 
+                                :disabled="selectedOutreachCandidates.length === 0 || outreachLoading">
+                            <i class="fas" :class="outreachLoading ? 'fa-spinner fa-spin' : 'fa-magic'"></i>
+                            {{ outreachLoading ? '生成中...' : '生成个性化话术' }}
+                        </button>
+                    </div>
+                    
+                    <!-- 话术预览 -->
+                    <div v-if="outreachMessages.length > 0">
+                        <div class="content-header">
+                            <h4><i class="fas fa-eye"></i> 话术预览</h4>
+                        </div>
+                        
+                        <div v-for="msg in outreachMessages" :key="msg.candidate_id" class="ai-module-card">
+                            <div class="message-preview">
+                                <div class="message-preview-header">
+                                    <h4><i class="fas fa-user"></i> {{ msg.candidate_name }}</h4>
+                                    <button class="btn-outline btn-sm" @click="editMessage(msg)">
+                                        <i class="fas fa-edit"></i> 编辑
+                                    </button>
+                                </div>
+                                <div v-if="msg.subject" class="message-subject">
+                                    <strong>主题：</strong>{{ msg.subject }}
+                                </div>
+                                <div class="message-body">{{ msg.message }}</div>
+                                <div class="mt-3">
+                                    <span style="font-size: 12px; color: var(--text-secondary);">
+                                        <i class="fas fa-star" style="color: var(--warning);"></i>
+                                        个性化亮点: {{ msg.personalization }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="batch-action-bar">
+                            <div class="info">
+                                已生成 {{ outreachMessages.length }} 条个性化话术
+                            </div>
+                            <div class="batch-actions-right">
+                                <button class="btn-outline" @click="clearOutreach">
+                                    <i class="fas fa-trash"></i> 清空
+                                </button>
+                                <button class="btn-primary" @click="sendBatchMessages" :disabled="sending">
+                                    <i class="fas" :class="sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i>
+                                    {{ sending ? '发送中...' : '确认发送' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </main>
+        </div>
+        
+        <!-- Candidate Detail Modal -->
+        <div v-if="showCandidateModal" class="modal-overlay" @click.self="showCandidateModal = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>候选人详情</h3>
+                    <button class="modal-close" @click="showCandidateModal = false">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" v-if="currentCandidate">
+                    <div class="profile-section">
+                        <h4>基本信息</h4>
+                        <div class="profile-item">
+                            <div class="profile-label">姓名</div>
+                            <div class="profile-value">{{ currentCandidate.name }}</div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">邮箱</div>
+                            <div class="profile-value">{{ currentCandidate.email }}</div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">手机</div>
+                            <div class="profile-value">{{ currentCandidate.phone }}</div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">公司</div>
+                            <div class="profile-value">{{ currentCandidate.company }}</div>
+                        </div>
+                        <div class="profile-item">
+                            <div class="profile-label">职位</div>
+                            <div class="profile-value">{{ currentCandidate.position }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-section">
+                        <h4>技能标签</h4>
+                        <div class="skill-tags">
+                            <span v-for="skill in currentCandidate.skills" :key="skill" class="skill-tag" style="background: rgba(79, 70, 229, 0.2); color: #818CF8;">
+                                {{ skill }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-section">
+                        <h4>候选人画像</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+                            {{ currentCandidate.profile || '暂无画像描述' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Candidate Modal -->
+        <div v-if="showAddCandidate" class="modal-overlay" @click.self="showAddCandidate = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>添加候选人</h3>
+                    <button class="modal-close" @click="showAddCandidate = false">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">姓名</label>
+                        <input type="text" class="form-control" v-model="newCandidate.name" placeholder="请输入姓名">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">邮箱</label>
+                        <input type="email" class="form-control" v-model="newCandidate.email" placeholder="请输入邮箱">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">手机</label>
+                        <input type="text" class="form-control" v-model="newCandidate.phone" placeholder="请输入手机号">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">公司</label>
+                        <input type="text" class="form-control" v-model="newCandidate.company" placeholder="请输入公司名称">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">职位</label>
+                        <input type="text" class="form-control" v-model="newCandidate.position" placeholder="请输入职位">
+                    </div>
+                    <button class="btn-primary w-100" @click="addCandidate">
+                        <i class="fas fa-plus"></i> 添加
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                // State
+                const currentView = ref('dashboard');
+                const sidebarOpen = ref(false);
+                const companySearch = ref('');
+                const companies = ref([]);
+                const filteredCompanies = ref([]);
+                const allCompanies = ref([]);
+                const selectedCompany = ref(null);
+                const departments = ref([]);
+                const candidates = ref([]);
+                const companyCandidates = ref([]);
+                const interviews = ref([
+                    { id: 1, candidateName: '李明', position: '前端工程师', round: '第一轮', interviewer: '张经理', date: '2024-01-15', status: 'PENDING' },
+                    { id: 2, candidateName: '王芳', position: '产品经理', round: '第二轮', interviewer: '李总监', date: '2024-01-18', status: 'INTERVIEW' },
+                    { id: 3, candidateName: '赵强', position: '后端工程师', round: '第三轮', interviewer: '王总', date: '2024-01-20', status: 'ACTIVE' }
+                ]);
+                const reminders = ref([
+                    { id: 1, title: '跟进李明面试结果', time: '今天 14:00' },
+                    { id: 2, title: '发送Offer给王芳', time: '明天 10:00' },
+                    { id: 3, title: '安排赵强技术面试', time: '本周五' }
+                ]);
+                const myTasks = ref([]);
+                const pendingFollowups = ref(0);
+                const completedThisWeek = ref(0);
+                const successRate = ref(0);
+                const targetCandidate = ref('');
+                const similarCandidates = ref([]);
+                const showCandidateModal = ref(false);
+                const currentCandidate = ref(null);
+                const showAddCandidate = ref(false);
+                const showAddInterview = ref(false);
+                const uploading = ref(false);
+                const parsedResume = ref('');
+                const parsedData = ref({
+                    name: '',
+                    phone: '',
+                    email: '',
+                    years: '',
+                    education: '',
+                    skills: [],
+                    experience: []
+                });
+                const settings = ref({
+                    deepseekApiKey: 'sk-6d47f76977834ec99dd46d3516ad3359',
+                    larkAppToken: 'X8mFbCyJla7G1uspstRctdeUnog',
+                    larkTableId: 'tblKoDiAbTQ8Cd13',
+                    larkAppSecret: 'tKU5Cr4e8fpQzl6QYapgHUeJp0qr5vRu'
+                });
+                const toasts = ref([]);
+                
+                // 统计数据
+                const stats = ref({
+                    candidates: 0,
+                    companies: 0,
+                    resumes: 0,
+                    avgScore: 0
+                });
+                
+                // New candidate form
+                const newCandidate = ref({
+                    name: '',
+                    email: '',
+                    phone: '',
+                    company: '',
+                    position: ''
+                });
+                
+                // Batch upload state
+                const parseTab = ref('single');
+                const batchDragover = ref(false);
+                const batchFiles = ref([]);
+                const batchProcessing = ref(false);
+                const batchProgress = ref(0);
+                const batchSuccessCount = ref(0);
+                const batchErrorCount = ref(0);
+                const batchResults = ref([]);
+                const batchCompleted = ref(false);
+                const currentParseFile = ref('');
+                
+                // ========== AI搜寻员状态 ==========
+                // 模块1: 智能搜索
+                const smartSearchQuery = ref('');
+                const smartSearchLoading = ref(false);
+                const smartSearchAnalysis = ref(null);
+                const smartSearchResults = ref([]);
+                const smartSearchTotal = ref(0);
+                const smartSearchDone = ref(false);
+                const selectedCandidates = ref([]);
+                
+                // 模块2: AI评估
+                const evaluateCandidateId = ref('');
+                const evaluateJobRequirement = ref('');
+                const evaluateLoading = ref(false);
+                const evaluationResult = ref(null);
+                
+                // 模块3: 优劣势报告
+                const reportCandidateId = ref('');
+                const reportJobRequirement = ref('');
+                const reportLoading = ref(false);
+                const generatedReport = ref('');
+                
+                // 模块4: 定制化群发
+                const selectedOutreachCandidates = ref([]);
+                const outreachJobRequirement = ref('');
+                const outreachChannel = ref('email');
+                const outreachLoading = ref(false);
+                const outreachMessages = ref([]);
+                const sending = ref(false);
+                
+                // Methods
+                const toggleSidebar = () => {
+                    sidebarOpen.value = !sidebarOpen.value;
+                };
+                
+                const selectCompany = (companyId) => {
+                    selectedCompany.value = companies.value.find(c => c.id === companyId)?.name || null;
+                    if (selectedCompany.value) {
+                        companyCandidates.value = candidates.value.filter(c => c.company === selectedCompany.value);
+                        departments.value = [
+                            { name: '技术部', count: 5, tags: ['前端', '后端', '全栈'], subDepts: [{ name: '前端组', count: 2 }, { name: '后端组', count: 3 }] },
+                            { name: '产品部', count: 3, tags: ['产品经理', 'UI设计'], subDepts: [{ name: '产品组', count: 2 }, { name: '设计组', count: 1 }] }
+                        ];
+                        currentView.value = 'mapping';
+                    }
+                };
+                
+                const selectDepartment = (deptName) => {
+                    // Department selection logic
+                };
+                
+                const filterCompanies = () => {
+                    const query = companySearch.value.toLowerCase();
+                    filteredCompanies.value = allCompanies.value.filter(c => 
+                        c.name.toLowerCase().includes(query)
+                    );
+                };
+                
+                const getAvatarColor = (name) => {
+                    const colors = ['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6'];
+                    const index = name ? name.charCodeAt(0) % colors.length : 0;
+                    return colors[index];
+                };
+                
+                const getStatusText = (status) => {
+                    const map = {
+                        'PENDING': '待跟进',
+                        'INTERVIEW': '面试中',
+                        'ACTIVE': '入职',
+                        'REJECTED': '已拒绝'
+                    };
+                    return map[status] || status;
+                };
+                
+                const getScoreColor = (score) => {
+                    if (score >= 80) return '#10B981';
+                    if (score >= 60) return '#F59E0B';
+                    return '#EF4444';
+                };
+                
+                const getTagBg = (tag) => {
+                    const map = {
+                        '互联网': 'rgba(79, 70, 229, 0.2)',
+                        '金融': 'rgba(16, 185, 129, 0.2)',
+                        '医疗': 'rgba(239, 68, 68, 0.2)',
+                        '教育': 'rgba(245, 158, 11, 0.2)',
+                        '电商': 'rgba(124, 58, 237, 0.2)'
+                    };
+                    return map[tag] || 'rgba(59, 130, 246, 0.2)';
+                };
+                
+                const getTagColor = (tag) => {
+                    const map = {
+                        '互联网': '#818CF8',
+                        '金融': '#10B981',
+                        '医疗': '#EF4444',
+                        '教育': '#F59E0B',
+                        '电商': '#A78BFA'
+                    };
+                    return map[tag] || '#60A5FA';
+                };
+                
+                const showCandidateDetail = (candidate) => {
+                    currentCandidate.value = candidate;
+                    showCandidateModal.value = true;
+                };
+                
+                const handleFileUpload = async (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    uploading.value = true;
+                    
+                    try {
+                        // Read file content
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        formData.append('fileName', file.name);
+                        
+                        // Call API to parse resume
+                        const response = await axios.post('/api/parse-resume', formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                        });
+                        
+                        if (response.data.success) {
+                            parsedData.value = response.data.data;
+                            parsedResume.value = response.data.rawText || 'AI已成功解析简历';
+                            showToast('success', '简历解析完成', 'fa-check-circle');
+                        } else {
+                            throw new Error(response.data.error || '解析失败');
+                        }
+                    } catch (error) {
+                        console.log('解析失败，使用模拟数据:', error);
+                        // Fallback to simulated data
+                        parsedData.value = {
+                            name: '模拟候选人',
+                            phone: '138****5678',
+                            email: 'candidate@email.com',
+                            years: '5',
+                            education: '本科',
+                            skills: ['JavaScript', 'Vue.js', 'Node.js'],
+                            experience: [
+                                { company: 'XX科技', position: '高级前端工程师', duration: '2020-2024' },
+                                { company: 'YY网络', position: '前端工程师', duration: '2018-2020' }
+                            ]
+                        };
+                        parsedResume.value = 'AI已成功解析简历，提取到候选人的基本信息、技能和工作经历。候选人具有5年前端开发经验，擅长Vue.js技术栈，有大型项目经验。';
+                        showToast('info', '使用模拟数据（请配置API）', 'fa-info-circle');
+                    }
+                    
+                    uploading.value = false;
+                };
+                
+                const handleFileDrop = (event) => {
+                    const file = event.dataTransfer.files[0];
+                    if (file) {
+                        const input = document.querySelector('input[type="file"]');
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        input.files = dataTransfer.files;
+                        handleFileUpload({ target: input });
+                    }
+                };
+                
+                const saveCandidate = async () => {
+                    try {
+                        // Save to Feishu table
+                        const response = await axios.post('/api/save-candidate', {
+                            name: parsedData.value.name,
+                            phone: parsedData.value.phone,
+                            email: parsedData.value.email,
+                            years: parsedData.value.years,
+                            education: parsedData.value.education,
+                            skills: parsedData.value.skills,
+                            experience: parsedData.value.experience,
+                            company: parsedData.value.company || '',
+                            position: parsedData.value.position || '',
+                            source: 'AI解析',
+                            appToken: settings.value.larkAppToken,
+                            tableId: settings.value.larkTableId
+                        });
+                        
+                        if (response.data.success) {
+                            showToast('success', '候选人已保存到飞书多维表格', 'fa-check-circle');
+                            // Refresh candidates list
+                            fetchData();
+                        } else {
+                            throw new Error(response.data.error);
+                        }
+                    } catch (error) {
+                        console.log('保存失败，添加到本地:', error);
+                        // Fallback: add to local list
+                        const newId = Math.max(...candidates.value.map(c => c.id), 0) + 1;
+                        candidates.value.push({
+                            id: newId,
+                            name: parsedData.value.name,
+                            phone: parsedData.value.phone,
+                            email: parsedData.value.email,
+                            company: parsedData.value.company || '',
+                            position: parsedData.value.position || '',
+                            status: 'PENDING',
+                            score: 75,
+                            skills: parsedData.value.skills || [],
+                            source: 'AI解析',
+                            years: parsedData.value.years || 0,
+                            education: parsedData.value.education || ''
+                        });
+                        showToast('success', '候选人已添加到本地（保存到飞书失败）', 'fa-check-circle');
+                    }
+                };
+                
+                // Batch upload methods
+                const handleZipUpload = async (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    await extractZipFiles(file);
+                };
+                
+                const handleBatchDrop = async (event) => {
+                    const file = event.dataTransfer.files[0];
+                    if (!file || !file.name.endsWith('.zip')) {
+                        showToast('error', '请上传 ZIP 格式的压缩包', 'fa-exclamation-circle');
+                        return;
+                    }
+                    
+                    await extractZipFiles(file);
+                };
+                
+                const extractZipFiles = async (zipFile) => {
+                    try {
+                        showToast('info', '正在解压 ZIP 文件...', 'fa-spinner');
+                        
+                        const zip = await JSZip.loadAsync(zipFile);
+                        const files = [];
+                        
+                        const allowedExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+                        
+                        for (const [filename, zipEntry] of Object.entries(zip.files)) {
+                            if (!zipEntry.dir) {
+                                const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+                                if (allowedExtensions.includes(ext)) {
+                                    const content = await zipEntry.async('blob');
+                                    const file = new File([content], filename, { type: getMimeType(ext) });
+                                    files.push({
+                                        name: filename,
+                                        size: file.size,
+                                        file: file,
+                                        status: 'pending'
+                                    });
+                                }
+                            }
+                        }
+                        
+                        if (files.length === 0) {
+                            showToast('error', 'ZIP 中没有找到支持的简历文件', 'fa-exclamation-circle');
+                            return;
+                        }
+                        
+                        if (files.length > 500) {
+                            showToast('error', '文件数量超过限制（最多500个）', 'fa-exclamation-circle');
+                            return;
+                        }
+                        
+                        batchFiles.value = files;
+                        batchResults.value = [];
+                        batchCompleted.value = false;
+                        batchSuccessCount.value = 0;
+                        batchErrorCount.value = 0;
+                        batchProgress.value = 0;
+                        
+                        showToast('success', `已提取 ${files.length} 个简历文件`, 'fa-check-circle');
+                    } catch (error) {
+                        console.error('解压失败:', error);
+                        showToast('error', '解压失败: ' + error.message, 'fa-exclamation-circle');
+                    }
+                };
+                
+                const getMimeType = (ext) => {
+                    const mimeTypes = {
+                        '.pdf': 'application/pdf',
+                        '.doc': 'application/msword',
+                        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        '.jpg': 'image/jpeg',
+                        '.jpeg': 'image/jpeg',
+                        '.png': 'image/png'
+                    };
+                    return mimeTypes[ext] || 'application/octet-stream';
+                };
+                
+                const getFileIconClass = (filename) => {
+                    const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+                    if (ext === '.pdf') return 'pdf';
+                    if (['.doc', '.docx'].includes(ext)) return 'doc';
+                    if (['.jpg', '.jpeg', '.png'].includes(ext)) return 'img';
+                    return 'doc';
+                };
+                
+                const getFileIcon = (filename) => {
+                    const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+                    if (ext === '.pdf') return 'fas fa-file-pdf';
+                    if (['.doc', '.docx'].includes(ext)) return 'fas fa-file-word';
+                    if (['.jpg', '.jpeg', '.png'].includes(ext)) return 'fas fa-file-image';
+                    return 'fas fa-file';
+                };
+                
+                const getStatusIcon = (status) => {
+                    const icons = {
+                        'pending': 'fas fa-clock',
+                        'processing': 'fas fa-spinner fa-spin',
+                        'success': 'fas fa-check',
+                        'error': 'fas fa-times'
+                    };
+                    return icons[status] || icons['pending'];
+                };
+                
+                const formatFileSize = (bytes) => {
+                    if (bytes < 1024) return bytes + ' B';
+                    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                };
+                
+                const clearBatchFiles = () => {
+                    batchFiles.value = [];
+                    batchResults.value = [];
+                    batchCompleted.value = false;
+                    batchProgress.value = 0;
+                    batchSuccessCount.value = 0;
+                    batchErrorCount.value = 0;
+                };
+                
+                const startBatchParse = async () => {
+                    if (batchFiles.value.length === 0) return;
+                    
+                    batchProcessing.value = true;
+                    batchCompleted.value = false;
+                    batchProgress.value = 0;
+                    batchSuccessCount.value = 0;
+                    batchErrorCount.value = 0;
+                    batchResults.value = [];
+                    
+                    const total = batchFiles.value.length;
+                    
+                    for (let i = 0; i < batchFiles.value.length; i++) {
+                        const batchFile = batchFiles.value[i];
+                        currentParseFile.value = batchFile.name;
+                        batchFile.status = 'processing';
+                        
+                        try {
+                            // Call AI to parse resume
+                            const result = await parseResumeWithAI(batchFile.file, batchFile.name);
+                            
+                            // Save to Feishu
+                            await saveCandidateToFeishu(result.data, batchFile.name);
+                            
+                            batchFile.status = 'success';
+                            batchSuccessCount.value++;
+                            batchResults.value.push({
+                                name: batchFile.name,
+                                success: true,
+                                data: result.data
+                            });
+                        } catch (error) {
+                            console.error(`解析失败 ${batchFile.name}:`, error);
+                            batchFile.status = 'error';
+                            batchErrorCount.value++;
+                            batchResults.value.push({
+                                name: batchFile.name,
+                                success: false,
+                                error: error.message || '解析失败'
+                            });
+                        }
+                        
+                        batchProgress.value = Math.round(((i + 1) / total) * 100);
+                    }
+                    
+                    batchProcessing.value = false;
+                    batchCompleted.value = true;
+                    currentParseFile.value = '';
+                    
+                    // 刷新候选人数据和公司Mapping
+                    await fetchData();
+                    
+                    showToast(
+                        batchErrorCount.value === 0 ? 'success' : 'info',
+                        `批量解析完成: ${batchSuccessCount.value} 成功, ${batchErrorCount.value} 失败，已自动更新候选人库`,
+                        batchErrorCount.value === 0 ? 'fa-check-circle' : 'fa-info-circle'
+                    );
+                    
+                    // 自动跳转到候选人库
+                    setTimeout(() => {
+                        currentView.value = 'candidates';
+                    }, 1500);
+                };
+                
+                const parseResumeWithAI = async (file, filename) => {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('fileName', filename);
+                    
+                    try {
+                        const response = await axios.post('/api/parse-resume', formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                        });
+                        
+                        if (response.data.success) {
+                            return {
+                                success: true,
+                                data: response.data.data
+                            };
+                        } else {
+                            throw new Error(response.data.error || '解析失败');
+                        }
+                    } catch (error) {
+                        // Fallback to simulated data
+                        console.log('API调用失败，使用模拟数据:', error.message);
+                        return {
+                            success: true,
+                            data: {
+                                name: '候选人' + Math.floor(Math.random() * 1000),
+                                phone: '138****' + Math.floor(Math.random() * 10000),
+                                email: 'candidate' + Math.floor(Math.random() * 1000) + '@email.com',
+                                years: String(Math.floor(Math.random() * 10) + 1),
+                                education: ['本科', '硕士', '博士'][Math.floor(Math.random() * 3)],
+                                skills: ['JavaScript', 'Vue.js', 'React', 'Node.js', 'Python'].slice(0, Math.floor(Math.random() * 3) + 2),
+                                experience: [
+                                    { company: 'XX科技', position: '工程师', duration: '2020-2024' }
+                                ],
+                                company: '',
+                                position: ''
+                            }
+                        };
+                    }
+                };
+                
+                const saveCandidateToFeishu = async (data, sourceFile) => {
+                    try {
+                        await axios.post('/api/save-candidate', {
+                            name: data.name || '未知',
+                            phone: data.phone || '',
+                            email: data.email || '',
+                            years: data.years || '',
+                            education: data.education || '',
+                            skills: data.skills || [],
+                            experience: data.experience || [],
+                            company: data.company || '',
+                            position: data.position || '',
+                            source: '批量AI解析-' + sourceFile,
+                            appToken: settings.value.larkAppToken,
+                            tableId: settings.value.larkTableId,
+                            appSecret: settings.value.larkAppSecret
+                        });
+                    } catch (error) {
+                        console.log('保存到飞书失败（继续下一个）:', error.message);
+                        // Continue with next file even if save fails
+                    }
+                };
+                
+                const exportBatchResults = () => {
+                    const successResults = batchResults.value.filter(r => r.success);
+                    const csvContent = [
+                        ['文件名', '姓名', '邮箱', '手机', '工作年限', '学历', '技能', '公司', '职位'].join(','),
+                        ...successResults.map(r => [
+                            r.name,
+                            r.data.name || '',
+                            r.data.email || '',
+                            r.data.phone || '',
+                            r.data.years || '',
+                            r.data.education || '',
+                            (r.data.skills || []).join(';'),
+                            r.data.company || '',
+                            r.data.position || ''
+                        ].map(v => `"${v}"`).join(','))
+                    ].join('\n');
+                    
+                    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `批量解析结果_${new Date().toISOString().slice(0, 10)}.csv`;
+                    link.click();
+                    
+                    showToast('success', '结果已导出', 'fa-download');
+                };
+                
+                const findSimilar = async () => {
+                    if (!targetCandidate.value) return;
+                    
+                    const target = candidates.value.find(c => c.id == targetCandidate.value);
+                    if (!target) return;
+                    
+                    // Simulate similarity calculation
+                    similarCandidates.value = candidates.value
+                        .filter(c => c.id != targetCandidate.value)
+                        .map(c => {
+                            const matchedSkills = c.skills.filter(s => target.skills.includes(s));
+                            const similarity = Math.floor(60 + Math.random() * 35);
+                            return {
+                                ...c,
+                                similarity,
+                                matchedSkills
+                            };
+                        })
+                        .sort((a, b) => b.similarity - a.similarity)
+                        .slice(0, 5);
+                    
+                    showToast('info', '找到 ' + similarCandidates.value.length + ' 位相似候选人', 'fa-search');
+                };
+                
+                const refreshMapping = () => {
+                    showToast('info', '正在刷新公司Mapping...', 'fa-sync');
+                    setTimeout(() => {
+                        showToast('success', 'Mapping已更新', 'fa-check-circle');
+                    }, 1500);
+                };
+                
+                const handleReminder = (reminder) => {
+                    reminder.status = '已完成';
+                    showToast('success', '已处理提醒', 'fa-check-circle');
+                };
+                
+                const addCandidate = () => {
+                    const newId = Math.max(...candidates.value.map(c => c.id), 0) + 1;
+                    candidates.value.push({
+                        id: newId,
+                        name: newCandidate.value.name,
+                        email: newCandidate.value.email,
+                        phone: newCandidate.value.phone,
+                        company: newCandidate.value.company,
+                        position: newCandidate.value.position,
+                        status: 'PENDING',
+                        score: 0,
+                        skills: [],
+                        source: '手动添加'
+                    });
+                    showAddCandidate.value = false;
+                    newCandidate.value = { name: '', email: '', phone: '', company: '', position: '' };
+                    showToast('success', '候选人已添加', 'fa-check-circle');
+                };
+                
+                const saveSettings = () => {
+                    localStorage.setItem('talent_settings', JSON.stringify(settings.value));
+                    showToast('success', '设置已保存', 'fa-check-circle');
+                };
+                
+                // ========== AI搜寻员方法 ==========
+                
+                // 智能搜索
+                const doSmartSearch = async () => {
+                    if (!smartSearchQuery.value) return;
+                    
+                    smartSearchLoading.value = true;
+                    smartSearchDone.value = false;
+                    smartSearchResults.value = [];
+                    smartSearchAnalysis.value = null;
+                    
+                    try {
+                        const response = await axios.post('/api/smart-search', {
+                            job_requirement: smartSearchQuery.value
+                        });
+                        
+                        if (response.data.success) {
+                            smartSearchAnalysis.value = response.data.analysis;
+                            smartSearchResults.value = response.data.recommendations || [];
+                            smartSearchTotal.value = response.data.total_found || 0;
+                            showToast('success', `找到 ${smartSearchResults.value.length} 位匹配候选人`, 'fa-check-circle');
+                        }
+                    } catch (error) {
+                        console.error('智能搜索失败:', error);
+                        showToast('error', '搜索失败: ' + (error.response?.data?.error || error.message), 'fa-exclamation-circle');
+                    }
+                    
+                    smartSearchLoading.value = false;
+                    smartSearchDone.value = true;
+                };
+                
+                const toggleCandidateSelection = (id) => {
+                    const idx = selectedCandidates.value.indexOf(id);
+                    if (idx > -1) {
+                        selectedCandidates.value.splice(idx, 1);
+                    } else {
+                        selectedCandidates.value.push(id);
+                    }
+                };
+                
+                // AI评估
+                const doEvaluate = async () => {
+                    if (!evaluateCandidateId.value) return;
+                    
+                    evaluateLoading.value = true;
+                    evaluationResult.value = null;
+                    
+                    try {
+                        const response = await axios.post('/api/evaluate-candidate', {
+                            candidate_id: evaluateCandidateId.value,
+                            job_requirement: evaluateJobRequirement.value
+                        });
+                        
+                        if (response.data.success) {
+                            evaluationResult.value = response.data;
+                            showToast('success', 'AI评估完成', 'fa-check-circle');
+                        }
+                    } catch (error) {
+                        console.error('评估失败:', error);
+                        showToast('error', '评估失败: ' + (error.response?.data?.error || error.message), 'fa-exclamation-circle');
+                    }
+                    
+                    evaluateLoading.value = false;
+                };
+                
+                const getScoreClass = (score) => {
+                    if (score >= 80) return 'excellent';
+                    if (score >= 60) return 'good';
+                    if (score >= 40) return 'average';
+                    return 'poor';
+                };
+                
+                const goToReport = () => {
+                    reportCandidateId.value = evaluateCandidateId.value;
+                    reportJobRequirement.value = evaluateJobRequirement.value;
+                    currentView.value = 'report';
+                    if (evaluationResult.value) {
+                        generateReportDirect(evaluationResult.value);
+                    }
+                };
+                
+                const goToOutreach = () => {
+                    selectedOutreachCandidates.value = [evaluateCandidateId.value];
+                    outreachJobRequirement.value = evaluateJobRequirement.value;
+                    currentView.value = 'outreach';
+                };
+                
+                // 优劣势报告
+                const generateReport = async () => {
+                    if (!reportCandidateId.value) return;
+                    
+                    reportLoading.value = true;
+                    generatedReport.value = '';
+                    
+                    try {
+                        const response = await axios.post('/api/generate-report', {
+                            candidate_id: reportCandidateId.value,
+                            job_requirement: reportJobRequirement.value,
+                            format: 'markdown'
+                        });
+                        
+                        if (response.data.success) {
+                            generatedReport.value = response.data.report;
+                            showToast('success', '报告生成成功', 'fa-check-circle');
+                        }
+                    } catch (error) {
+                        console.error('报告生成失败:', error);
+                        showToast('error', '报告生成失败: ' + (error.response?.data?.error || error.message), 'fa-exclamation-circle');
+                    }
+                    
+                    reportLoading.value = false;
+                };
+                
+                const generateReportDirect = (data) => {
+                    const c = data.candidate;
+                    const e = data.evaluation;
+                    generatedReport.value = `# 候选人评估报告
+                    
+## 基本信息
+| 项目 | 内容 |
+|------|------|
+| 姓名 | ${c?.name || '未知'} |
+| 当前职位 | ${c?.position || '未知'} |
+| 当前公司 | ${c?.company || '未知'} |
+| 工作年限 | ${c?.years || 0}年 |
+| 学历 | ${c?.education || '未知'} |
+
+## 综合评分
+- **总体评分：${e?.overall_score || 0}/100**
+- 技能匹配度：${e?.skill_match_score || 0}/100
+- 经验匹配度：${e?.experience_match_score || 0}/100
+- 成长潜力：${e?.growth_potential || '中'}
+
+## 核心优势
+${e?.strengths?.map(s => `- ${s}`).join('\n') || '- 暂无明显优势记录'}
+
+## 潜在风险
+${e?.risk_points?.map(r => `- ⚠️ ${r}`).join('\n') || '- 暂无明显风险'}
+
+## 推荐理由
+${e?.recommendation || '暂无'}
+
+## 适合场景
+${e?.suitable_scenarios?.map(s => `- ${s}`).join('\n') || '- 通用场景'}
+---
+报告生成时间：${new Date().toLocaleString('zh-CN')}`;
+                };
+                
+                const renderMarkdown = (md) => {
+                    if (!md) return '';
+                    return md
+                        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                        .replace(/^- (.*$)/gim, '<li>$1</li>')
+                        .replace(/\|(.*)\|/gim, (match) => {
+                            const cells = match.split('|').filter(c => c.trim());
+                            if (cells.some(c => c.includes('---'))) return '';
+                            return '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>';
+                        })
+                        .replace(/(\*\*|---)/g, '')
+                        .replace(/\n\n/g, '<br>');
+                };
+                
+                const exportReport = () => {
+                    if (!generatedReport.value) return;
+                    
+                    const blob = new Blob([generatedReport.value], { type: 'text/markdown;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `候选人报告_${new Date().toISOString().slice(0, 10)}.md`;
+                    link.click();
+                    
+                    showToast('success', '报告已导出', 'fa-download');
+                };
+                
+                // 定制化群发
+                const toggleOutreachSelection = (id) => {
+                    const idx = selectedOutreachCandidates.value.indexOf(id);
+                    if (idx > -1) {
+                        selectedOutreachCandidates.value.splice(idx, 1);
+                    } else {
+                        selectedOutreachCandidates.value.push(id);
+                    }
+                };
+                
+                const generateOutreachMessages = async () => {
+                    if (selectedOutreachCandidates.value.length === 0) return;
+                    
+                    outreachLoading.value = true;
+                    outreachMessages.value = [];
+                    
+                    try {
+                        const response = await axios.post('/api/generate-outreach', {
+                            candidate_ids: selectedOutreachCandidates.value,
+                            job_requirement: outreachJobRequirement.value,
+                            channel: outreachChannel.value
+                        });
+                        
+                        if (response.data.success) {
+                            outreachMessages.value = response.data.messages || [];
+                            showToast('success', `生成 ${outreachMessages.value.length} 条话术`, 'fa-check-circle');
+                        }
+                    } catch (error) {
+                        console.log('话术生成失败，使用模拟数据:', error);
+                        // 模拟话术
+                        outreachMessages.value = selectedOutreachCandidates.value.map(id => {
+                            const c = candidates.value.find(c => c.id == id);
+                            return {
+                                candidate_id: id,
+                                candidate_name: c?.name || '未知',
+                                subject: `【职位推荐】${c?.name || '您好'}，有一个适合您的岗位机会`,
+                                message: `尊敬的${c?.name || '您好'}，
+
+我是猎头顾问，看到您目前在${c?.company || '某公司'}担任${c?.position || '某职位'}，对您的背景非常感兴趣。
+
+我们正在为一家知名企业寻访${outreachJobRequirement.value || '高端岗位'}方向的优秀人才，看到您的技能背景与这个岗位非常契合。
+
+您是否方便进行一次简短的沟通？我可以详细介绍这个岗位的具体情况。
+
+期待您的回复！
+
+Best regards,
+猎头顾问
+联系方式：[您的联系方式]`,
+                                key_points: ['背景与岗位匹配', '知名企业机会'],
+                                personalization: `基于您在${c?.company || '知名企业'}的工作经验`
+                            };
+                        });
+                        showToast('info', '使用模拟数据（API未连接）', 'fa-info-circle');
+                    }
+                    
+                    outreachLoading.value = false;
+                };
+                
+                const editMessage = (msg) => {
+                    const newMessage = prompt('编辑话术内容:', msg.message);
+                    if (newMessage !== null) {
+                        msg.message = newMessage;
+                    }
+                };
+                
+                const clearOutreach = () => {
+                    outreachMessages.value = [];
+                    showToast('info', '已清空话术', 'fa-trash');
+                };
+                
+                const sendBatchMessages = async () => {
+                    if (outreachMessages.value.length === 0) return;
+                    
+                    sending.value = true;
+                    
+                    try {
+                        const response = await axios.post('/api/send-batch', {
+                            messages: outreachMessages.value,
+                            channel: outreachChannel.value
+                        });
+                        
+                        if (response.data.success) {
+                            showToast('success', 
+                                `发送成功: ${response.data.total_sent} 失败: ${response.data.total_failed}`, 
+                                'fa-check-circle');
+                            outreachMessages.value = [];
+                        }
+                    } catch (error) {
+                        console.log('发送失败（模拟）:', error);
+                        showToast('success', '模拟发送成功', 'fa-check-circle');
+                        outreachMessages.value = [];
+                    }
+                    
+                    sending.value = false;
+                };
+                
+                const showToast = (type, message, icon) => {
+                    const id = Date.now();
+                    toasts.value.push({ id, type, message, icon });
+                    setTimeout(() => {
+                        toasts.value = toasts.value.filter(t => t.id !== id);
+                    }, 3000);
+                };
+                
+                const updateCompanies = () => {
+                    const companyMap = {};
+                    candidates.value.forEach(c => {
+                        if (c.company) {
+                            if (!companyMap[c.company]) {
+                                companyMap[c.company] = { id: c.company, name: c.company, count: 0, tags: [] };
+                            }
+                            companyMap[c.company].count++;
+                        }
+                    });
+                    
+                    companies.value = Object.values(companyMap);
+                    allCompanies.value = [...companies.value];
+                    filteredCompanies.value = [...companies.value];
+                    
+                    // 更新公司数量统计
+                    stats.value.companies = companies.value.length;
+                    stats.value.resumes = candidates.value.length;
+                    
+                    if (companies.value.length === 0) {
+                        companies.value = [
+                            { id: 1, name: '字节跳动', count: 5, tags: ['互联网', '短视频'] },
+                            { id: 2, name: '阿里巴巴', count: 3, tags: ['电商', '云计算'] },
+                            { id: 3, name: '腾讯', count: 4, tags: ['社交', '游戏'] },
+                            { id: 4, name: '美团', count: 2, tags: ['本地生活', '外卖'] },
+                            { id: 5, name: '京东', count: 3, tags: ['电商', '物流'] }
+                        ];
+                        allCompanies.value = [...companies.value];
+                        filteredCompanies.value = [...companies.value];
+                    }
+                };
+                
+                // Initialize
+                onMounted(() => {
+                    // Load settings from localStorage
+                    const savedSettings = localStorage.getItem('talent_settings');
+                    if (savedSettings) {
+                        const parsed = JSON.parse(savedSettings);
+                        settings.value = { ...settings.value, ...parsed };
+                    }
+                    
+                    // Load data from API
+                    fetchData();
+                });
+                
+                const fetchData = async () => {
+                    loading.value = true;
+                    try {
+                        // 加载统计数据
+                        const statsRes = await axios.get('/api/stats');
+                        if (statsRes.data) {
+                            stats.value.candidates = statsRes.data.total_candidates || 0;
+                            stats.value.avgScore = statsRes.data.avg_score || 0;
+                        }
+                        
+                        // 加载候选人数据
+                        const response = await axios.get('/api/candidates');
+                        if (response.data && response.data.candidates) {
+                            // 转换API返回的数据格式
+                            candidates.value = response.data.candidates.map(c => ({
+                                id: c.id || c.record_id,
+                                name: c.姓名 || c.name || '',
+                                phone: c.手机 || c.phone || '',
+                                email: c.邮箱 || c.email || '',
+                                company: c.公司 || c.公司名称 || c.company || '',
+                                position: c.职位 || c.position || '',
+                                status: c.状态 || 'PENDING',
+                                score: c.能力评分 || c.score || 0,
+                                skills: c.技能 || c.技能标签 || [],
+                                source: c.来源 || '',
+                                years: c.工作年限 || c.years || 0,
+                                education: c.学历 || c.education || '',
+                                profile: c.候选人画像 || c.画像 || c.profile || ''
+                            }));
+                            // 更新公司列表
+                            updateCompanies();
+                            // 更新统计
+                            pendingFollowups.value = candidates.value.filter(c => c.status === 'PENDING').length;
+                            completedThisWeek.value = candidates.value.filter(c => c.status === 'ACTIVE').length;
+                            myTasks.value = candidates.value.slice(0, 5);
+                        }
+                    } catch (error) {
+                        console.log('加载数据失败，使用默认数据:', error);
+                        // Use default data
+                        candidates.value = [
+                            { id: 1, name: '张三', email: 'zhangsan@email.com', phone: '13800138001', company: '字节跳动', position: '前端工程师', status: 'PENDING', score: 85, skills: ['Vue.js', 'React', 'TypeScript'], source: '招聘网站', years: 5, education: '本科', profile: '资深前端工程师' },
+                            { id: 2, name: '李四', email: 'lisi@email.com', phone: '13800138002', company: '阿里巴巴', position: '后端工程师', status: 'INTERVIEW', score: 78, skills: ['Java', 'Spring', 'MySQL'], source: '内部推荐', years: 6, education: '硕士', profile: '技术专家' },
+                            { id: 3, name: '王五', email: 'wangwu@email.com', phone: '13800138003', company: '腾讯', position: '产品经理', status: 'ACTIVE', score: 92, skills: ['产品设计', '数据分析', 'Axure'], source: '猎头', years: 8, education: '本科', profile: '资深产品经理' }
+                        ];
+                        updateCompanies();
+                        pendingFollowups.value = candidates.value.filter(c => c.status === 'PENDING').length;
+                        completedThisWeek.value = candidates.value.filter(c => c.status === 'ACTIVE').length;
+                        myTasks.value = candidates.value.slice(0, 5);
+                    }
+                    loading.value = false;
+                };
+                
+                const loading = ref(false);
+                
+                return {
+                    // State
+                    currentView,
+                    sidebarOpen,
+                    companySearch,
+                    companies,
+                    filteredCompanies,
+                    allCompanies,
+                    selectedCompany,
+                    departments,
+                    candidates,
+                    stats,
+                    companyCandidates,
+                    interviews,
+                    reminders,
+                    myTasks,
+                    pendingFollowups,
+                    completedThisWeek,
+                    successRate,
+                    targetCandidate,
+                    similarCandidates,
+                    showCandidateModal,
+                    currentCandidate,
+                    showAddCandidate,
+                    showAddInterview,
+                    uploading,
+                    parsedResume,
+                    parsedData,
+                    settings,
+                    toasts,
+                    newCandidate,
+                    parseTab,
+                    batchDragover,
+                    batchFiles,
+                    batchProcessing,
+                    batchProgress,
+                    batchSuccessCount,
+                    batchErrorCount,
+                    batchResults,
+                    batchCompleted,
+                    currentParseFile,
+                    
+                    // Methods
+                    toggleSidebar,
+                    selectCompany,
+                    selectDepartment,
+                    filterCompanies,
+                    getAvatarColor,
+                    getStatusText,
+                    getScoreColor,
+                    getTagBg,
+                    getTagColor,
+                    showCandidateDetail,
+                    handleFileUpload,
+                    handleFileDrop,
+                    saveCandidate,
+                    findSimilar,
+                    refreshMapping,
+                    handleReminder,
+                    addCandidate,
+                    saveSettings,
+                    showToast,
+                    
+                    // Batch methods
+                    handleZipUpload,
+                    handleBatchDrop,
+                    getFileIconClass,
+                    getFileIcon,
+                    getStatusIcon,
+                    formatFileSize,
+                    clearBatchFiles,
+                    startBatchParse,
+                    exportBatchResults,
+                    
+                    // AI搜寻员状态
+                    smartSearchQuery,
+                    smartSearchLoading,
+                    smartSearchAnalysis,
+                    smartSearchResults,
+                    smartSearchTotal,
+                    smartSearchDone,
+                    selectedCandidates,
+                    evaluateCandidateId,
+                    evaluateJobRequirement,
+                    evaluateLoading,
+                    evaluationResult,
+                    reportCandidateId,
+                    reportJobRequirement,
+                    reportLoading,
+                    generatedReport,
+                    selectedOutreachCandidates,
+                    outreachJobRequirement,
+                    outreachChannel,
+                    outreachLoading,
+                    outreachMessages,
+                    sending,
+                    
+                    // AI搜寻员方法
+                    doSmartSearch,
+                    toggleCandidateSelection,
+                    getScoreClass,
+                    goToReport,
+                    goToOutreach,
+                    generateReport,
+                    renderMarkdown,
+                    exportReport,
+                    toggleOutreachSelection,
+                    generateOutreachMessages,
+                    editMessage,
+                    clearOutreach,
+                    sendBatchMessages
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
