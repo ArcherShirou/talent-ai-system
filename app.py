@@ -28,6 +28,14 @@ try:
 except ImportError:
     REQUESTS_AVAILABLE = False
 
+# PDF Parsing
+try:
+    import fitz  # PyMuPDF
+    PDF_AVAILABLE = True
+except ImportError:
+    PDF_AVAILABLE = False
+
+
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
 
@@ -406,6 +414,23 @@ def save_candidate_to_feishu(candidate_data):
             return False, response.text
     except Exception as e:
         return False, str(e)
+
+
+
+def extract_text_from_pdf(file_content):
+    """从PDF文件中提取文本"""
+    if not PDF_AVAILABLE:
+        return None, "PyMuPDF not available"
+    
+    try:
+        doc = fitz.open(stream=file_content, filetype="pdf")
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        doc.close()
+        return text, None
+    except Exception as e:
+        return None, str(e)
 
 # ============ AI 简历解析 ============
 
@@ -1220,27 +1245,32 @@ def parse_resume_file():
     
     # 读取文件内容
     resume_text = ''
+    file_content = file.read()
     
-    try:
-        # 尝试不同编码
-        file_content = file.read()
-        
-        # 尝试 UTF-8
+    # 检查文件类型
+    filename_lower = filename.lower() if filename else ''
+    
+    if filename_lower.endswith('.pdf'):
+        # PDF文件处理
+        text, error = extract_text_from_pdf(file_content)
+        if error:
+            return jsonify({'error': f'PDF解析失败: {error}'}), 400
+        resume_text = text
+    else:
+        # 其他文件尝试文本解码
         try:
-            resume_text = file_content.decode('utf-8')
-        except:
-            # 尝试 GBK
             try:
-                resume_text = file_content.decode('gbk', errors='ignore')
+                resume_text = file_content.decode('utf-8')
             except:
-                resume_text = str(file_content)
-                
-    except Exception as e:
-        print(f"Error reading file: {e}")
-        return jsonify({'error': f'Failed to read file: {str(e)}'}), 400
+                try:
+                    resume_text = file_content.decode('gbk', errors='ignore')
+                except:
+                    resume_text = str(file_content)
+        except Exception as e:
+            return jsonify({'error': f'文件读取失败: {str(e)}'}), 400
     
-    if not resume_text:
-        return jsonify({'error': 'Empty file content'}), 400
+    if not resume_text or not resume_text.strip():
+        return jsonify({'error': '文件内容为空或无法解析'}), 400
     
     # 使用AI解析
     result = parse_resume_with_ai(resume_text)
