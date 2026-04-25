@@ -1237,10 +1237,11 @@ def parse_file():
 @app.route('/api/parse-resume', methods=['POST'])
 def parse_resume_file():
     """解析上传的简历文件（支持PDF、Word、图片）"""
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file provided'}), 400
-    
-    file = request.files['file']
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
     filename = request.form.get('fileName', file.filename)
     
     # 读取文件内容
@@ -1289,6 +1290,14 @@ def parse_resume_file():
         'data': result,
         'rawText': f'已从文件 {filename} 中提取简历信息，AI解析完成。'
     })
+    
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': f'解析失败: {str(e)}',
+            'traceback': traceback.format_exc()
+        }), 500
 
 @app.route('/api/save-candidate', methods=['POST'])
 def save_candidate_api():
